@@ -46,27 +46,34 @@ namespace GoProOffloader
                 return;
             }
 
-            List<string> files = GetFilesRecursive(Path.Combine(_source, "DCIM"));
+            List<string> files = GetMediaFilesRecursive(Path.Combine(_source, "DCIM"));
             foreach (string file in files)
             {
-                DateTime creation = File.GetCreationTime(file);
-                string name = System.IO.Path.GetFileName(file);
+                try
+                {
+                    DateTime creation = File.GetCreationTime(file);
+                    string name = System.IO.Path.GetFileName(file);
 
-                string dest = System.IO.Path.Combine(_destination, creation.ToString("yyyy-MM-dd"), camera, creation.ToString("HHmmss") + "_" + name);
-                
-                if (Directory.Exists(Path.GetDirectoryName(dest)) == false)
-                {
-                    Directory.CreateDirectory(Path.GetDirectoryName(dest)!);
+                    string dest = System.IO.Path.Combine(_destination, creation.ToString("yyyy-MM-dd"), camera, creation.ToString("HHmmss") + "_" + name);
+
+                    if (!Directory.Exists(Path.GetDirectoryName(dest)))
+                    {
+                        Directory.CreateDirectory(Path.GetDirectoryName(dest)!);
+                    }
+                    if (System.IO.File.Exists(dest))
+                    {
+                        Console.WriteLine(dest + ": File already exists, skipping");
+                        continue;
+                    }
+                    else
+                    {
+                        Console.WriteLine(dest);
+                        System.IO.File.Copy(file, dest, false);
+                    }
                 }
-                if (System.IO.File.Exists(dest))
+                catch (Exception ex)
                 {
-                    Console.WriteLine(dest + ": File already exists, skipping");
-                    continue;
-                }
-                else
-                {
-                    Console.WriteLine(dest);
-                    System.IO.File.Copy(file, dest, false);
+                    Console.WriteLine(file + ": Error copying file: " + ex.Message);
                 }
 
             }
@@ -84,7 +91,7 @@ namespace GoProOffloader
             return version?.Camera ?? "Unknown";
         }
 
-        private static List<string> GetFilesRecursive(string path)
+        private static List<string> GetMediaFilesRecursive(string path)
         {
             List<string> files = new List<string>();
             files.AddRange(System.IO.Directory.GetFiles(path, "*.jpg"));
@@ -92,7 +99,7 @@ namespace GoProOffloader
 
             foreach (string dir in System.IO.Directory.GetDirectories(path))
             {
-                files.AddRange(GetFilesRecursive(dir));
+                files.AddRange(GetMediaFilesRecursive(dir));
             }
             return files;
         }
