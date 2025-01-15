@@ -20,20 +20,27 @@ namespace GoProOffloader
                 _destination = args[1];
             }
 
+            Console.WriteLine("Source: " + _source);
+            Console.WriteLine("Destination: " + _destination);
+
             if (System.IO.Directory.Exists(_source) == false)
             {
                 Console.WriteLine("Source directory does not exist");
+                Console.ReadLine();
                 return;
             }
 
             if (System.IO.Directory.Exists(Path.Combine(_source, "dcim")) == false)
             {
                 Console.WriteLine("Source does not contain a DCIM directory");
+                Console.ReadLine();
                 return;
             }
 
 
             CopyFiles();
+            Console.Write("Done, press any key to exit");
+            Console.ReadLine();
         }
 
         public static void CopyFiles()
