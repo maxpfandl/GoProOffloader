@@ -2,22 +2,32 @@
 using System.Text.Json.Nodes;
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using Microsoft.Extensions.Configuration;
 
 namespace GoProOffloader
 {
     internal class Program
     {
-        static string _source = @"L:\";
-        static string _destination = @"d:\GoPro\";
+        static string _source = "";
+        static string _destination = "";
         static void Main(string[] args)
         {
 
+            var builder = new ConfigurationBuilder()
+                .SetBasePath(Directory.GetCurrentDirectory())
+                .AddJsonFile("appsettings.json", optional: false);
 
+            IConfiguration config = builder.Build();
 
             if (args.Length == 2)
             {
                 _source = args[0];
                 _destination = args[1];
+            }
+            else
+            {
+                _source = config["defaultSource"]!;
+                _destination = config["defaultDestination"]!;
             }
 
             Console.WriteLine("Source: " + _source);
@@ -54,6 +64,11 @@ namespace GoProOffloader
             }
 
             List<string> files = GetMediaFilesRecursive(Path.Combine(_source, "DCIM"));
+            if (files.Count == 0)
+            {
+                Console.WriteLine("No files found");
+                return;
+            }
             foreach (string file in files)
             {
                 try
