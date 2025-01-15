@@ -3,6 +3,7 @@ using System.Text.Json.Nodes;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using Microsoft.Extensions.Configuration;
+using System.Diagnostics.CodeAnalysis;
 
 namespace GoProOffloader
 {
@@ -10,6 +11,8 @@ namespace GoProOffloader
     {
         static string _source = "";
         static string _destination = "";
+
+        [RequiresUnreferencedCode("Calls GoProOffloader.Program.CopyFiles()")]
         static void Main(string[] args)
         {
 
@@ -53,6 +56,7 @@ namespace GoProOffloader
             Console.ReadLine();
         }
 
+        [RequiresUnreferencedCode("Calls GoProOffloader.Program.GetCamera(String)")]
         public static void CopyFiles()
         {
             string camera = GetCamera(_source);
@@ -101,6 +105,7 @@ namespace GoProOffloader
             }
         }
 
+        [RequiresUnreferencedCode("Calls System.Text.Json.JsonSerializer.Deserialize<TValue>(Stream, JsonSerializerOptions)")]
         private static string GetCamera(string source)
         {
             using FileStream stream = File.OpenRead((System.IO.Path.Combine(source, "misc", "version.txt")));
