@@ -11,8 +11,8 @@ namespace GoProOffloader
     {
         static string _source = "";
         static string _destination = "";
+        static IConfiguration? _config;
 
-        [RequiresUnreferencedCode("Calls GoProOffloader.Program.CopyFiles()")]
         static void Main(string[] args)
         {
 
@@ -20,7 +20,7 @@ namespace GoProOffloader
                 .SetBasePath(Directory.GetCurrentDirectory())
                 .AddJsonFile("appsettings.json", optional: false);
 
-            IConfiguration config = builder.Build();
+            _config = builder.Build();
 
             if (args.Length == 2)
             {
@@ -29,8 +29,8 @@ namespace GoProOffloader
             }
             else
             {
-                _source = config["defaultSource"]!;
-                _destination = config["defaultDestination"]!;
+                _source = _config["defaultSource"]!;
+                _destination = _config["defaultDestination"]!;
             }
 
             Console.WriteLine("Source: " + _source);
@@ -56,15 +56,14 @@ namespace GoProOffloader
             Console.ReadLine();
         }
 
-        [RequiresUnreferencedCode("Calls GoProOffloader.Program.GetCamera(String)")]
         public static void CopyFiles()
         {
             string camera = GetCamera(_source);
 
-            if (camera == "Unknown")
+            if (camera == "unknown" || camera == null || camera == "")
             {
-                Console.WriteLine("Unknown camera type, not a GoPro?");
-                return;
+                Console.WriteLine("Unknown camera type, not a GoPro? Please enter camera type or press enter to continue without camera type:");
+                camera = Console.ReadLine() ?? "";
             }
 
             List<string> files = GetMediaFilesRecursive(Path.Combine(_source, "DCIM"));
@@ -79,8 +78,11 @@ namespace GoProOffloader
                 {
                     DateTime creation = File.GetCreationTime(file);
                     string name = System.IO.Path.GetFileName(file);
-
-                    string dest = System.IO.Path.Combine(_destination, creation.ToString("yyyy-MM-dd"), camera, creation.ToString("HHmmss") + "_" + name);
+                    string dest = "";
+                    if (!string.IsNullOrEmpty(camera))
+                        dest = System.IO.Path.Combine(_destination, creation.ToString("yyyy-MM-dd"), camera, creation.ToString("HHmmss") + "_" + name);
+                    else
+                        dest = System.IO.Path.Combine(_destination, creation.ToString("yyyy-MM-dd"), creation.ToString("HHmmss") + "_" + name);
 
                     if (!Directory.Exists(Path.GetDirectoryName(dest)))
                     {
@@ -105,17 +107,30 @@ namespace GoProOffloader
             }
         }
 
-        [RequiresUnreferencedCode("Calls System.Text.Json.JsonSerializer.Deserialize<TValue>(Stream, JsonSerializerOptions)")]
         private static string GetCamera(string source)
         {
-            using FileStream stream = File.OpenRead((System.IO.Path.Combine(source, "misc", "version.txt")));
-            JsonSerializerOptions options = new JsonSerializerOptions
+            try
             {
-                AllowTrailingCommas = true
-            };
-            var version = JsonSerializer.Deserialize<GoProVersion>(stream, options);
+                var versionFile = System.IO.Path.Combine(source, "misc", "version.txt");
+                if (!System.IO.File.Exists(versionFile))
+                {
+                    return "unknown";
+                }
 
-            return version?.Camera ?? "Unknown";
+                using FileStream stream = File.OpenRead(versionFile);
+                JsonSerializerOptions options = new JsonSerializerOptions
+                {
+                    AllowTrailingCommas = true
+                };
+                var version = JsonSerializer.Deserialize<GoProVersion>(stream, options);
+
+                return version?.Camera ?? "unknown";
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine("Error reading version file: " + ex.Message);
+                return "unknown";
+            }
         }
 
         private static List<string> GetMediaFilesRecursive(string path)
@@ -123,6 +138,7 @@ namespace GoProOffloader
             List<string> files = new List<string>();
             files.AddRange(System.IO.Directory.GetFiles(path, "*.jpg"));
             files.AddRange(System.IO.Directory.GetFiles(path, "*.mp4"));
+            files.AddRange(System.IO.Directory.GetFiles(path, "*.cr2"));
 
             foreach (string dir in System.IO.Directory.GetDirectories(path))
             {
