@@ -4,6 +4,7 @@ using System.Text.Json;
 using System.Text.Json.Serialization;
 using Microsoft.Extensions.Configuration;
 using System.Diagnostics.CodeAnalysis;
+using System.Reflection;
 
 namespace GoProOffloader
 {
@@ -11,6 +12,10 @@ namespace GoProOffloader
     {
         static string _source = "";
         static string _destination = "";
+        static string _journal = "journal.txt";
+
+        static List<string> _alreadyCopied = new List<string>();
+
         static IConfiguration? _config;
 
         static void Main(string[] args)
@@ -21,6 +26,12 @@ namespace GoProOffloader
                 .AddJsonFile("appsettings.json", optional: false);
 
             _config = builder.Build();
+
+            _journal = Path.Combine(AppContext.BaseDirectory?.ToString() ?? "", _journal);
+            if(File.Exists(_journal))
+            {
+                _alreadyCopied = File.ReadAllLines(_journal).ToList();
+            }
 
             if (args.Length == 2)
             {
@@ -52,6 +63,11 @@ namespace GoProOffloader
 
 
             CopyFiles();
+            if(File.Exists(_journal))
+            {
+                File.Delete(_journal);
+            }
+            File.WriteAllLines(_journal, _alreadyCopied);
             Console.Write("Done, press any key to exit");
             Console.ReadLine();
         }
@@ -88,6 +104,11 @@ namespace GoProOffloader
                     {
                         Directory.CreateDirectory(Path.GetDirectoryName(dest)!);
                     }
+                    if(_alreadyCopied.Contains(dest))
+                    {
+                        Console.WriteLine(file + ": File already copied, skipping");
+                        continue;
+                    }
                     if (System.IO.File.Exists(dest))
                     {
                         Console.WriteLine(dest + ": File already exists, skipping");
@@ -97,6 +118,7 @@ namespace GoProOffloader
                     {
                         Console.WriteLine(dest);
                         System.IO.File.Copy(file, dest, false);
+                        _alreadyCopied.Add(dest);
                     }
                 }
                 catch (Exception ex)
