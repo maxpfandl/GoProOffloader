@@ -96,9 +96,9 @@ namespace GoProOffloader
                     string name = System.IO.Path.GetFileName(file);
                     string dest = "";
                     if (!string.IsNullOrEmpty(camera))
-                        dest = System.IO.Path.Combine(_destination, creation.ToString("yyyy-MM-dd"), camera, creation.ToString("HHmmss") + "_" + name);
+                        dest = System.IO.Path.Combine(_destination, creation.ToString("yyyy-MM-dd"), camera, creation.ToString("yyyyMMddHHmmss") + "_" + name);
                     else
-                        dest = System.IO.Path.Combine(_destination, creation.ToString("yyyy-MM-dd"), creation.ToString("HHmmss") + "_" + name);
+                        dest = System.IO.Path.Combine(_destination, creation.ToString("yyyy-MM-dd"), creation.ToString("yyyyMMddHHmmss") + "_" + name);
 
                     if (!Directory.Exists(Path.GetDirectoryName(dest)))
                     {
